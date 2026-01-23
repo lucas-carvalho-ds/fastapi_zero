@@ -1,0 +1,1 @@
+FastAPI do Zero em 2026
