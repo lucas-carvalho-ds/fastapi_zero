@@ -1,7 +1,9 @@
 from dataclasses import asdict
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from fastapi_zero.database import get_session
 from fastapi_zero.models import User
 
 
@@ -24,3 +26,12 @@ def test_create_user(session, mock_db_time):
         'created_at': time,
         'updated_at': time,
     }
+
+
+def test_get_session():
+    session_generator = get_session()
+    session = next(session_generator)
+
+    assert isinstance(session, Session)
+
+    assert session.is_active
