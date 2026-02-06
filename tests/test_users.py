@@ -57,8 +57,8 @@ def test_read_user(client, user):
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
         'id': 1,
-        'username': 'test',
-        'email': 'test@test.com',
+        'username': f'{user.username}',
+        'email': f'{user.username}@test.com',
     }
 
 
@@ -106,23 +106,12 @@ def test_not_found_read_user(client):
     assert response.json() == {'detail': 'User not found.'}
 
 
-def test_update_integrity_error(client, user, token):
-    # Criando um registro para "fausto"
-    client.post(
-        '/users',
-        json={
-            'username': 'fausto',
-            'email': 'fausto@example.com',
-            'password': 'secret',
-        },
-    )
-
-    # Alterando o user.username das fixture para fausto
+def test_update_integrity_error(client, user, other_user, token):
     response = client.put(
         f'/users/{user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
-            'username': 'fausto',
+            'username': other_user.username,
             'email': 'bob@example.com',
             'password': 'mynewpassword',
         },
@@ -132,9 +121,9 @@ def test_update_integrity_error(client, user, token):
     assert response.json() == {'detail': 'Username or Email already exists.'}
 
 
-def test_update_user_with_another_user(client, user, token):
+def test_update_user_with_another_user(client, other_user, token):
     response = client.put(
-        f'/users/{user.id + 1}',
+        f'/users/{other_user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'fausto',
@@ -147,9 +136,9 @@ def test_update_user_with_another_user(client, user, token):
     assert response.json() == {'detail': 'Not enough permissions.'}
 
 
-def test_delete_user_with_another_user(client, user, token):
+def test_delete_user_with_another_user(client, other_user, token):
     response = client.delete(
-        f'/users/{user.id + 1}',
+        f'/users/{other_user.id}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
