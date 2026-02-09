@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from fastapi_zero.models import TodoState
+
 
 class MessageSchema(BaseModel):
     message: str
@@ -31,3 +33,19 @@ class LoginToken(BaseModel):
 class FilterPage(BaseModel):
     offset: int = Field(ge=0, default=0)
     limit: int = Field(ge=0, default=10)
+
+
+class TodoSchema(BaseModel):
+    title: str
+    description: str
+    state: TodoState = Field(default=TodoState.draft)
+
+
+class TodoPublic(TodoSchema):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TodoList(BaseModel):
+    todos: list[TodoPublic]
