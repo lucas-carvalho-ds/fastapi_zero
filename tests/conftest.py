@@ -82,7 +82,7 @@ async def user(session: AsyncSession) -> User:
 
     user.clean_password = password  # type: ignore
 
-    return user
+    return user  # type: ignore
 
 
 @pytest_asyncio.fixture
@@ -97,7 +97,7 @@ async def other_user(session: AsyncSession) -> User:
 
     user.clean_password = password  # type: ignore
 
-    return user
+    return user  # type: ignore
 
 
 @pytest.fixture
@@ -118,7 +118,7 @@ async def todo(session: AsyncSession) -> Todo:
     await session.commit()
     await session.refresh(todo)
 
-    return todo
+    return todo  # type: ignore
 
 
 @pytest.fixture

@@ -34,26 +34,29 @@ async def test_create_user(session: AsyncSession, mock_db_time):
 
 
 @pytest.mark.asyncio
-async def test_create_todo(session: AsyncSession, user):
-    new_todo = Todo(
-        title='To do Example',
-        description='A description about the task.',
-        state=TodoState.draft,
-        user_id=user.id,
-    )
+async def test_create_todo(session: AsyncSession, user, mock_db_time):
+    with mock_db_time(model=Todo) as time:
+        new_todo = Todo(
+            title='To do Example',
+            description='A description about the task.',
+            state=TodoState.draft,
+            user_id=user.id,
+        )
 
-    session.add(new_todo)
-    await session.commit()
+        session.add(new_todo)
+        await session.commit()
 
-    todo = await session.scalar(
-        select(Todo).where(Todo.title == 'To do Example')
-    )
+        todo = await session.scalar(
+            select(Todo).where(Todo.title == 'To do Example')
+        )
 
-    assert todo is not None
-    assert asdict(todo) == {
-        'id': 1,
-        'title': 'To do Example',
-        'description': 'A description about the task.',
-        'state': TodoState.draft,
-        'user_id': user.id,
-    }
+        assert todo is not None
+        assert asdict(todo) == {
+            'id': 1,
+            'title': 'To do Example',
+            'description': 'A description about the task.',
+            'state': TodoState.draft,
+            'created_at': time,
+            'updated_at': time,
+            'user_id': user.id,
+        }

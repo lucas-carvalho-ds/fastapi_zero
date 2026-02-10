@@ -1,34 +1,39 @@
 from http import HTTPStatus
 
 import pytest
+from sqlalchemy import select
 
-from fastapi_zero.schemas import TodoPublic, TodoState
+from fastapi_zero.models import Todo, TodoState, User
+from fastapi_zero.schemas import TodoPublic
 from tests.conftest import TodoFactory
 
 
-def test_create_todo(client, token):
-    response = client.post(
-        '/todos/',
-        headers={'Authorization': f'Bearer {token}'},
-        json={
+def test_create_todo(client, token, mock_db_time):
+    with mock_db_time(model=Todo) as time:
+        response = client.post(
+            '/todos/',
+            headers={'Authorization': f'Bearer {token}'},
+            json={
+                'title': 'Almoçar 12:00',
+                'description': 'Fazer pausa do expediente para almoçar',
+                'state': 'todo',
+                'id': 1,
+            },
+        )
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert response.json() == {
             'title': 'Almoçar 12:00',
             'description': 'Fazer pausa do expediente para almoçar',
             'state': 'todo',
             'id': 1,
-        },
-    )
-
-    assert response.status_code == HTTPStatus.CREATED
-    assert response.json() == {
-        'title': 'Almoçar 12:00',
-        'description': 'Fazer pausa do expediente para almoçar',
-        'state': 'todo',
-        'id': 1,
-    }
+            'created_at': time.isoformat(),
+            'updated_at': time.isoformat(),
+        }
 
 
-def test_get_todos(client, todo, token):
-    todos_schema = TodoPublic.model_validate(todo).model_dump()
+def test_list_todos(client, todo, token):
+    todos_schema = TodoPublic.model_validate(todo).model_dump(mode='json')
 
     response = client.get(
         '/todos/', headers={'Authorization': f'Bearer {token}'}
@@ -36,6 +41,45 @@ def test_get_todos(client, todo, token):
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'todos': [todos_schema]}
+
+
+@pytest.mark.asyncio
+async def test_list_todos_should_return_all_fields(
+    session, client, token, mock_db_time, user
+):
+    with mock_db_time(model=Todo) as time:
+        todo = TodoFactory.create(user_id=user.id)
+        session.add(todo)
+        await session.commit()
+
+    await session.refresh(todo)
+
+    response = client.get(
+        '/todos/',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.json()['todos'] == [
+        {
+            'created_at': time.isoformat(),
+            'updated_at': time.isoformat(),
+            'description': todo.description,
+            'id': todo.id,
+            'state': todo.state,
+            'title': todo.title,
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_validate_todostate_enum(session, client, user: User, token):
+    todo = TodoFactory.create(state='schrodinger', user_id=user.id)
+
+    session.add(todo)
+    await session.commit()
+
+    with pytest.raises(LookupError):
+        await session.scalar(select(Todo))
 
 
 @pytest.mark.asyncio
@@ -82,7 +126,7 @@ async def test_list_todos_filter_title_should_return_5_todos(
     await session.commit()
 
     response = client.get(
-        '/todos/?title=Test',
+        '/todos/?title=Test todo 1',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -141,7 +185,8 @@ async def test_delete_todo(client, session, user, todo, token):
     await session.commit()
 
     response = client.delete(
-        f'/todos/{todo.id}', headers={'Authorization': f'Bearer {token}'}
+        f'/todos/{todo.id}',  # type: ignore
+        headers={'Authorization': f'Bearer {token}'},
     )
 
     assert response.status_code == HTTPStatus.OK
@@ -168,7 +213,7 @@ async def test_delete_other_user_todo(client, session, other_user, token):
     await session.commit()
 
     response = client.delete(
-        f'/todos/{todo_other_user.id}',
+        f'/todos/{todo_other_user.id}',  # type: ignore
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -196,9 +241,29 @@ async def test_patch_todo(session, client, user, token):
     await session.commit()
 
     response = client.patch(
-        f'/todos/{todo.id}',
+        f'/todos/{todo.id}',  # type: ignore
         json={'title': 'teste!'},
         headers={'Authorization': f'Bearer {token}'},
     )
     assert response.status_code == HTTPStatus.OK
     assert response.json()['title'] == 'teste!'
+
+
+def test_list_todos_filter_min_length_exercicio_06(client, token):
+    tiny_string = 'a'
+    response = client.get(
+        f'/todos/?title={tiny_string}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_list_todos_filter_max_length_exercicio_06(client, token):
+    large_string = 'a' * 22
+    response = client.get(
+        f'/todos/?title={large_string}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
