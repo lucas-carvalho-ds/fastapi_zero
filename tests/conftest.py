@@ -2,9 +2,9 @@ from contextlib import contextmanager
 from datetime import datetime
 
 import factory
+import factory.fuzzy
 import pytest
 import pytest_asyncio
-from factory import fuzzy
 from fastapi.testclient import TestClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -71,7 +71,7 @@ def mock_db_time():
 
 
 @pytest_asyncio.fixture
-async def user(session: AsyncSession):
+async def user(session: AsyncSession) -> User:
     password = 'test123'
 
     user = UserFactory(password=get_password_hash(password))
@@ -86,7 +86,7 @@ async def user(session: AsyncSession):
 
 
 @pytest_asyncio.fixture
-async def other_user(session: AsyncSession):
+async def other_user(session: AsyncSession) -> User:
     password = 'test123'
 
     user = UserFactory(password=get_password_hash(password))
@@ -111,7 +111,7 @@ def token(client, user):
 
 
 @pytest_asyncio.fixture
-async def todo(session: AsyncSession):
+async def todo(session: AsyncSession) -> Todo:
     todo = TodoFactory()
 
     session.add(todo)
@@ -139,9 +139,7 @@ class TodoFactory(factory.Factory):
     class Meta:
         model = Todo
 
-    title = factory.Sequence(lambda n: f'Task {n}')
-    description = factory.LazyAttribute(
-        lambda obj: f'Description of {obj.title}'
-    )
-    state = fuzzy.FuzzyChoice(TodoState)
-    user_id = fuzzy.FuzzyInteger(1, 10)
+    title = factory.Faker('text')
+    description = factory.Faker('text')
+    state = factory.fuzzy.FuzzyChoice(TodoState)
+    user_id = 1
