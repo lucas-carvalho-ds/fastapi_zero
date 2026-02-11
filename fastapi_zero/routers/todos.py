@@ -67,23 +67,6 @@ async def list_todo(
     return {'todos': todos.all()}
 
 
-@router.delete('/{todo_id}', response_model=MessageSchema)
-async def delete_todo(todo_id: int, session: SessionDep, user: CurrentUser):
-    todo = await session.scalar(
-        select(Todo).where(Todo.user_id == user.id, Todo.id == todo_id)
-    )
-
-    if not todo:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='Task not found.'
-        )
-
-    await session.delete(todo)
-    await session.commit()
-
-    return {'message': 'Task has been deleted successfully.'}
-
-
 @router.patch('/{todo_id}', response_model=TodoPublic)
 async def patch_todo(
     todo_id: int, session: SessionDep, user: CurrentUser, todo: TodoUpdate
@@ -106,3 +89,20 @@ async def patch_todo(
     await session.refresh(db_todo)
 
     return db_todo
+
+
+@router.delete('/{todo_id}', response_model=MessageSchema)
+async def delete_todo(todo_id: int, session: SessionDep, user: CurrentUser):
+    todo = await session.scalar(
+        select(Todo).where(Todo.user_id == user.id, Todo.id == todo_id)
+    )
+
+    if not todo:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='Task not found.'
+        )
+
+    await session.delete(todo)
+    await session.commit()
+
+    return {'message': 'Task has been deleted successfully.'}

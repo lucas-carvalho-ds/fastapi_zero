@@ -9,6 +9,11 @@ class MessageSchema(BaseModel):
     message: str
 
 
+class LoginToken(BaseModel):
+    token_type: str
+    access_token: str
+
+
 class UserSchema(BaseModel):
     username: str
     email: EmailStr
@@ -27,28 +32,6 @@ class UserList(BaseModel):
     users: list[UserPublic]
 
 
-class LoginToken(BaseModel):
-    token_type: str
-    access_token: str
-
-
-class FilterPage(BaseModel):
-    offset: int = Field(ge=0, default=0)
-    limit: int = Field(ge=0, default=10)
-
-
-class FilterTodo(FilterPage):
-    title: str | None = Field(default=None, min_length=3, max_length=20)
-    description: str | None = Field(default=None, min_length=3, max_length=20)
-    state: TodoState | None = None
-
-
-class TodoUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    state: TodoState | None = None
-
-
 class TodoSchema(BaseModel):
     title: str
     description: str
@@ -63,5 +46,22 @@ class TodoPublic(TodoSchema):
     model_config = ConfigDict(from_attributes=True)
 
 
+class TodoUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    state: TodoState | None = None
+
+
 class TodoList(BaseModel):
     todos: list[TodoPublic]
+
+
+class FilterPage(BaseModel):
+    offset: int = Field(ge=0, default=0)
+    limit: int = Field(ge=0, default=10)
+
+
+class FilterTodo(FilterPage):
+    title: str | None = Field(default=None, min_length=3, max_length=20)
+    description: str | None = Field(default=None, min_length=3, max_length=20)
+    state: TodoState | None = None

@@ -48,7 +48,7 @@ async def test_list_todos_should_return_all_fields(
     session, client, token, mock_db_time, user
 ):
     with mock_db_time(model=Todo) as time:
-        todo = TodoFactory.create(user_id=user.id)
+        todo = TodoFactory(user_id=user.id)
         session.add(todo)
         await session.commit()
 
@@ -63,10 +63,10 @@ async def test_list_todos_should_return_all_fields(
         {
             'created_at': time.isoformat(),
             'updated_at': time.isoformat(),
-            'description': todo.description,
-            'id': todo.id,
-            'state': todo.state,
-            'title': todo.title,
+            'description': todo.description,  # type: ignore
+            'id': todo.id,  # type: ignore
+            'state': todo.state,  # type: ignore
+            'title': todo.title,  # type: ignore
         }
     ]
 
@@ -249,7 +249,7 @@ async def test_patch_todo(session, client, user, token):
     assert response.json()['title'] == 'teste!'
 
 
-def test_list_todos_filter_min_length_exercicio_06(client, token):
+def test_list_todos_filter_min_length(client, token):
     tiny_string = 'a'
     response = client.get(
         f'/todos/?title={tiny_string}',
@@ -259,7 +259,7 @@ def test_list_todos_filter_min_length_exercicio_06(client, token):
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
-def test_list_todos_filter_max_length_exercicio_06(client, token):
+def test_list_todos_filter_max_length(client, token):
     large_string = 'a' * 22
     response = client.get(
         f'/todos/?title={large_string}',
