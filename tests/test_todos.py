@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy.exc import DataError
 
 from fastapi_zero.models import Todo, TodoState, User
 from fastapi_zero.schemas import TodoPublic
@@ -32,7 +32,7 @@ def test_create_todo(client, token, mock_db_time):
         }
 
 
-def test_list_todos(client, todo, token):
+def test_list_todos(client, user, todo, token):
     todos_schema = TodoPublic.model_validate(todo).model_dump(mode='json')
 
     response = client.get(
@@ -73,13 +73,12 @@ async def test_list_todos_should_return_all_fields(
 
 @pytest.mark.asyncio
 async def test_validate_todostate_enum(session, client, user: User, token):
-    todo = TodoFactory.create(state='schrodinger', user_id=user.id)
+    todo = TodoFactory(state='schrodinger', user_id=user.id)
 
     session.add(todo)
-    await session.commit()
 
-    with pytest.raises(LookupError):
-        await session.scalar(select(Todo))
+    with pytest.raises(DataError):
+        await session.commit()
 
 
 @pytest.mark.asyncio
