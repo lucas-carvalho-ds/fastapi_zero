@@ -11,3 +11,5 @@ RUN poetry config installer.max-workers 10
 RUN poetry install --no-interaction --no-ansi --without dev
 
 EXPOSE 8000
+
+ENTRYPOINT ["./entrypoint.sh"]
