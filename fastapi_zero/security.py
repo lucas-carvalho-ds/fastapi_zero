@@ -17,7 +17,8 @@ settings = Settings()  # type: ignore
 
 pwd_context = PasswordHash.recommended()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/token')
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl='auth/token', refreshUrl='auth/refresh_token')
 
 
 def get_password_hash(password: str):
